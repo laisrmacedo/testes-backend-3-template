@@ -1,5 +1,7 @@
 import { UserBusiness } from "../../src/business/UserBusiness"
 import { LoginInputDTO } from "../../src/dtos/userDTO"
+import { BadRequestError } from "../../src/errors/BadRequestError"
+import { NotFoundError } from "../../src/errors/NotFoundError"
 import { HashManagerMock } from "../mocks/HashManagerMock"
 import { IdGeneratorMock } from "../mocks/IdGeneratorMock"
 import { TokenManagerMock } from "../mocks/TokenManagerMock"
@@ -32,4 +34,72 @@ describe("login", () => {
         const response = await userBusiness.login(input)
         expect(response.token).toBe("token-mock-admin")
     })
+
+    test("deve disparar erro caso email nao seja uma string", async () => {
+    expect.assertions(2)
+        try {
+            const input: LoginInputDTO = {
+                email: null,
+                password: "bananinha"
+            }
+    
+            await userBusiness.login(input)
+        } catch (error) {
+            if(error instanceof BadRequestError){
+                expect(error.message).toBe("'email' deve ser string")
+                expect(error.statusCode).toBe(400)
+            }        
+        }
+    })
+
+    test("deve disparar erro caso email nao exista", async () => {
+    expect.assertions(2)
+        try {
+            const input: LoginInputDTO = {
+                email: "naoexiste@email.com",
+                password: "bananinha"
+            }
+    
+            await userBusiness.login(input)
+        } catch (error) {
+            if(error instanceof NotFoundError){
+                expect(error.message).toBe("'email' não cadastrado")
+                expect(error.statusCode).toBe(404)
+            }        
+        }
+    })
+
+    test("deve disparar erro caso a senha esteja incorreta", async () => {
+    expect.assertions(2)
+        try {
+            const input: LoginInputDTO = {
+                email: "normal@email.com",
+                password: "senhaincorreta"
+            }
+    
+            await userBusiness.login(input)
+        } catch (error) {
+            if(error instanceof BadRequestError){
+                expect(error.message).toBe("'password' incorreto")
+                expect(error.statusCode).toBe(400)
+            }        
+        }
+    })
+
+    // test("deve disparar erro caso email nao seja encontrado", async () => {
+    // expect.assertions(1)
+    //     // outro formato
+    //     const input: LoginInputDTO = {
+    //         email: null,
+    //         password: "hash-bananinha"
+    //     }
+
+    //     expect(async () => {
+    //         await userBusiness.login(input)
+    //     }).rejects.toThrow("'email' não cadastrado")
+        
+    //     expect(async () => {
+    //         await userBusiness.login(input)
+    //     }).rejects.toBeInstanceOf(BadRequestError)
+    // })
 })
